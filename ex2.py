@@ -77,6 +77,75 @@ class Perceptron:
         test_row = np.append(test_row, 1)
         return np.argmax(np.dot(weights, test_row))
 
+class SVM:
+    def __init__(self, train_set, targets):
+        self.train_set = train_set
+        self.targets = targets
+        self.learning_rate = 0.1
+        self.lamda = 0.01
+    
+    def weights_init(self):
+        input_size = len(self.train_set[0])
+        output_size = 3
+        weights = np.zeros((output_size, input_size))
+        return weights
+
+    def train(self, num_of_epochs):
+        bias_column = np.full(240,1).reshape(240,1)
+        self.train_set = np.append(self.train_set, bias_column, axis=1)
+        w = self.weights_init()
+        for e in range(num_of_epochs):
+            if e % 10 == 0 : self.learning_rate *= 0.1
+            union_data = list(zip(self.train_set, self.targets))
+            np.random.shuffle(union_data)
+            for x, y in union_data:
+                y_hat = np.argmax(np.dot(w, x))
+                y = int(y)
+                y_hat = int(y_hat)
+                if y != y_hat:
+                    w[y, :] = (1 - self.lamda*self.learning_rate) * w[y, :] + (self.learning_rate * x)
+                    w[y_hat, :] = (1 - self.lamda*self.learning_rate) * w[y_hat, :] - (self.learning_rate * x)
+        return w
+    
+    def predict(self, weights, test_row):
+        test_row = np.append(test_row, 1)
+        return np.argmax(np.dot(weights, test_row))
+
+class PA:
+    def __init__(self, train_set, targets):
+        self.train_set = train_set
+        self.targets = targets
+    
+    def weights_init(self):
+        input_size = len(self.train_set[0])
+        output_size = 3
+        weights = np.zeros((output_size, input_size))
+        return weights
+    
+    def hinge_loss(self, x, y, y_hat, w):
+         return max(0, 1 - np.dot(w[y, :],x) + np.dot(w[y_hat, :], x))
+
+    def train(self, num_of_epochs):
+        bias_column = np.full(240,1).reshape(240,1)
+        self.train_set = np.append(self.train_set, bias_column, axis=1)
+        w = self.weights_init()
+        for e in range(num_of_epochs):
+            union_data = list(zip(self.train_set, self.targets))
+            np.random.shuffle(union_data)
+            for x, y in union_data:
+                y_hat = np.argmax(np.dot(w, x))
+                y = int(y)
+                y_hat = int(y_hat)
+                hing_loss = self.hinge_loss(x, y, y_hat, w)
+                tau = hing_loss / (2 * np.linalg.norm(x)**2)
+                if y != y_hat:
+                    w[y, :] = w[y, :] + tau * x
+                    w[y_hat, :] = w[y_hat, :] - tau * x
+        return w
+
+    def predict(self, weights, test_row):
+        test_row = np.append(test_row, 1)
+        return np.argmax(np.dot(weights, test_row))
 
 
 
@@ -86,12 +155,19 @@ if __name__ == "__main__":
 
     knn = KNN(train, train_targets, 15)
     perceptron = Perceptron(train, train_targets)
+    svm = SVM(train, train_targets)
+    pa = PA(train, train_targets)
 
     per_weights = perceptron.train(20)
+    svm_weights = svm.train(20)
+    pa_weights = pa.train(30)
+
     for row in test:
         knn_yhat = knn.predict(row)
         perceptron_yhat = perceptron.predict(per_weights, row)
-        output_file.write(f"knn: {knn_yhat}, perceptron: {perceptron_yhat}, svm: {0}, pa: {0}\n")
+        svm_yhat = svm.predict(svm_weights, row)
+        pa_yhat = pa.predict(pa_weights, row)
+        output_file.write(f"knn: {knn_yhat}, perceptron: {perceptron_yhat}, svm: {svm_yhat}, pa: {pa_yhat}\n")
 
     
     
