@@ -42,7 +42,7 @@ class KNN:
         for neighbor in k_nearest_neighbors: 
             neighbor_index = np.where(np.all(self.train_set == neighbor, axis=1))[0][0]
             classes[int(self.targets[neighbor_index])] += 1
-        return (classes.index(max(classes)))
+        return (np.argmax(classes))
 
 class Perceptron:
     def __init__(self, train_set, targets):
@@ -89,6 +89,9 @@ class SVM:
         output_size = 3
         weights = np.zeros((output_size, input_size))
         return weights
+    
+    def hinge_loss(self, x, y, y_hat, w):
+        return max(0, 1 - np.dot(w[y, :],x) + np.dot(w[y_hat, :], x))
 
     def train(self, num_of_epochs):
         bias_column = np.full(240,1).reshape(240,1)
@@ -102,9 +105,15 @@ class SVM:
                 y_hat = np.argmax(np.dot(w, x))
                 y = int(y)
                 y_hat = int(y_hat)
-                if y != y_hat:
+                hinge_loss = self.hinge_loss(x, y, y_hat, w)
+                if hinge_loss > 0:
                     w[y, :] = (1 - self.lamda*self.learning_rate) * w[y, :] + (self.learning_rate * x)
                     w[y_hat, :] = (1 - self.lamda*self.learning_rate) * w[y_hat, :] - (self.learning_rate * x)
+                    for i in range(len(w)):
+                        if i != y and i != y_hat:
+                            w[i, :] = w[i, :] * (1 - self.lamda*self.learning_rate) 
+                else:
+                    w = w * (1 - self.lamda*self.learning_rate)
         return w
     
     def predict(self, weights, test_row):
@@ -137,7 +146,7 @@ class PA:
                 y = int(y)
                 y_hat = int(y_hat)
                 hing_loss = self.hinge_loss(x, y, y_hat, w)
-                tau = hing_loss / (2 * np.linalg.norm(x)**2)
+                tau = hing_loss / (2 * (np.linalg.norm(x)**2))
                 if y != y_hat:
                     w[y, :] = w[y, :] + tau * x
                     w[y_hat, :] = w[y_hat, :] - tau * x
@@ -154,13 +163,13 @@ if __name__ == "__main__":
     test = zscore_normalization(test)
 
     knn = KNN(train, train_targets, 15)
-    perceptron = Perceptron(train, train_targets)
-    svm = SVM(train, train_targets)
-    pa = PA(train, train_targets)
+    perceptron = Perceptron(train, train_targets.copy())
+    svm = SVM(train, train_targets.copy())
+    pa = PA(train, train_targets.copy())
 
-    per_weights = perceptron.train(20)
-    svm_weights = svm.train(20)
-    pa_weights = pa.train(30)
+    per_weights = perceptron.train(30)
+    svm_weights = svm.train(30)
+    pa_weights = pa.train(50)
 
     for row in test:
         knn_yhat = knn.predict(row)
