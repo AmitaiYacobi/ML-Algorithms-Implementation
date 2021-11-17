@@ -159,23 +159,24 @@ class PA:
 
 
 if __name__ == "__main__":
-    train = zscore_normalization(train)
-    test = zscore_normalization(test)
-
     knn = KNN(train, train_targets, 15)
-    perceptron = Perceptron(train, train_targets.copy())
-    svm = SVM(train, train_targets.copy())
-    pa = PA(train, train_targets.copy())
+
+    normalized_train = zscore_normalization(train)
+    normalized_test = zscore_normalization(test)
+
+    perceptron = Perceptron(normalized_train, train_targets.copy())
+    svm = SVM(normalized_train, train_targets.copy())
+    pa = PA(normalized_train, train_targets.copy())
 
     per_weights = perceptron.train(30)
     svm_weights = svm.train(30)
     pa_weights = pa.train(50)
 
-    for row in test:
+    for normalized_row, row in zip(normalized_test, test):
         knn_yhat = knn.predict(row)
-        perceptron_yhat = perceptron.predict(per_weights, row)
-        svm_yhat = svm.predict(svm_weights, row)
-        pa_yhat = pa.predict(pa_weights, row)
+        perceptron_yhat = perceptron.predict(per_weights, normalized_row)
+        svm_yhat = svm.predict(svm_weights, normalized_row)
+        pa_yhat = pa.predict(pa_weights, normalized_row)
         output_file.write(f"knn: {knn_yhat}, perceptron: {perceptron_yhat}, svm: {svm_yhat}, pa: {pa_yhat}\n")
 
     
