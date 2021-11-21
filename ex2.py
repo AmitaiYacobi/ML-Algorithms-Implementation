@@ -2,11 +2,7 @@ import numpy as np
 import sys
 import os
 
-train, targets, test, output_file = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-train = np.loadtxt(train, delimiter=",")
-test = np.loadtxt(test, delimiter=",")
-train_targets = np.loadtxt(targets)
-output_file = open(output_file, "w")
+
 
 
 def minmax_normalization(data_set):
@@ -69,8 +65,8 @@ class Perceptron:
                 y = int(y)
                 y_hat = int(y_hat)
                 if y != y_hat:
-                    w[y, :] = w[y, :] + (self.learning_rate * x)
-                    w[y_hat, :] = w[y_hat, :] - (self.learning_rate * x)
+                    w[y] = w[y] + (self.learning_rate * x)
+                    w[y_hat] = w[y_hat] - (self.learning_rate * x)
         return w
     
     def predict(self, weights, test_row):
@@ -91,7 +87,7 @@ class SVM:
         return weights
     
     def hinge_loss(self, x, y, y_hat, w):
-        return max(0, 1 - np.dot(w[y, :],x) + np.dot(w[y_hat, :], x))
+        return max(0, 1 - np.dot(w[y],x) + np.dot(w[y_hat], x))
 
     def train(self, num_of_epochs):
         bias_column = np.full(240,1).reshape(240,1)
@@ -107,11 +103,11 @@ class SVM:
                 y_hat = int(y_hat)
                 hinge_loss = self.hinge_loss(x, y, y_hat, w)
                 if hinge_loss > 0:
-                    w[y, :] = (1 - self.lamda*self.learning_rate) * w[y, :] + (self.learning_rate * x)
-                    w[y_hat, :] = (1 - self.lamda*self.learning_rate) * w[y_hat, :] - (self.learning_rate * x)
+                    w[y] = (1 - self.lamda*self.learning_rate) * w[y] + (self.learning_rate * x)
+                    w[y_hat] = (1 - self.lamda*self.learning_rate) * w[y_hat] - (self.learning_rate * x)
                     for i in range(len(w)):
                         if i != y and i != y_hat:
-                            w[i, :] = w[i, :] * (1 - self.lamda*self.learning_rate) 
+                            w[i] = w[i] * (1 - self.lamda*self.learning_rate) 
                 else:
                     w = w * (1 - self.lamda*self.learning_rate)
         return w
@@ -132,7 +128,7 @@ class PA:
         return weights
     
     def hinge_loss(self, x, y, y_hat, w):
-         return max(0, 1 - np.dot(w[y, :],x) + np.dot(w[y_hat, :], x))
+         return max(0, 1 - np.dot(w[y],x) + np.dot(w[y_hat], x))
 
     def train(self, num_of_epochs):
         bias_column = np.full(240,1).reshape(240,1)
@@ -148,8 +144,8 @@ class PA:
                 hing_loss = self.hinge_loss(x, y, y_hat, w)
                 tau = hing_loss / (2 * (np.linalg.norm(x)**2))
                 if y != y_hat:
-                    w[y, :] = w[y, :] + tau * x
-                    w[y_hat, :] = w[y_hat, :] - tau * x
+                    w[y] = w[y] + tau * x
+                    w[y_hat] = w[y_hat] - tau * x
         return w
 
     def predict(self, weights, test_row):
@@ -159,7 +155,13 @@ class PA:
 
 
 if __name__ == "__main__":
-    knn = KNN(train, train_targets, 15)
+    train, targets, test, output_file = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+    train = np.loadtxt(train, delimiter=",")
+    test = np.loadtxt(test, delimiter=",")
+    train_targets = np.loadtxt(targets)
+    output_file = open(output_file, "w")
+    
+    knn = KNN(train, train_targets, 5)
 
     normalized_train = zscore_normalization(train)
     normalized_test = zscore_normalization(test)
